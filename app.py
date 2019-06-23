@@ -10,7 +10,7 @@ from flask_jwt_extended import (
     get_jwt_identity
 )
 from flask_basicauth import BasicAuth
-#TEST
+
 app = Flask(__name__)
 basic_auth = BasicAuth(app)
 app.config['JWT_SECRET_KEY'] = 'super-secret'
@@ -125,7 +125,7 @@ def auth():
     # Знать бы как его генерить бы ещё
 
 
-@app.route('/short/<string:short_url>', methods=['GET'])
+@app.route('/<string:short_url>', methods=['GET'])
 def get_link(short_url):
     reqv = db.request_select('url, url_type, times_opened, user_id', 'Urls', 'short_url', short_url)
     print(reqv)
