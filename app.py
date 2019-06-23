@@ -124,7 +124,7 @@ def auth():
     # ну и наверн возвращаем токен
     # Знать бы как его генерить бы ещё
 
-
+#test
 @app.route('/<string:short_url>', methods=['GET'])
 def get_link(short_url):
     reqv = db.request_select('url, url_type, times_opened, user_id', 'Urls', 'short_url', short_url)
