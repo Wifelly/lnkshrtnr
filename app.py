@@ -137,25 +137,20 @@ def get_link(short_url):
         db.request_update('Urls', 'times_opened', times_opened, 'short_url', short_url)
         return redirect(reqv[0][0], code=302)
     elif reqv[0][1] == 'general':
-        return redirect('/general/' + short_url, code=302)
+        return redirect('/secure/' + short_url, code=302)
     elif reqv[0][1] == 'private':
-        return redirect('/private/' + short_url, code=302)
+        return redirect('/secure/' + short_url, code=302)
     else:
         # сумасшедший? что это вообще за ссылка?
         return Response('{"status": "error", "error": "Bad request"}', status=400, mimetype='application/json')
 
 
 
-@app.route('/general/<string:short_url>', methods=['GET'])
+@app.route('/secure/<string:short_url>', methods=['GET'])
 @auth_basic.login_required
 def general(short_url):
     return "Hello"
 
-
-@app.route('/private/<string:short_url>', methods=['GET'])
-@auth_basic.login_required
-def private(short_url):
-    return "Hello"
 
 
 
