@@ -12,7 +12,7 @@ from flask_jwt_extended import (
 from flask_httpauth import HTTPBasicAuth
 
 app = Flask(__name__)
-app.config['JWT_SECRET_KEY'] = 'super-secret'
+app.config['JWT_SECRET_KEY'] = '2bb80d537b1da3e38bd30361aa855686bde0eacd7162fef6a25fe97bf527a25b'
 db = request_db('db.db')
 link_types = ('public', 'general', 'private')
 jwt = JWTManager(app)
@@ -21,6 +21,7 @@ auth_basic = HTTPBasicAuth()
 
 @auth_basic.verify_password
 def validate_user(login, password):
+    '''Validate password'''
     hash_pass = db.request_select('password', 'Users', 'login', login)
     if hash_pass != []:
         return pbkdf2_sha256.verify(password, hash_pass[0][0])
@@ -29,14 +30,14 @@ def validate_user(login, password):
 
 
 def get_lk(login):
-    '''принимает логин, возвращает список '''
+    '''return url list of user'''
     response = db.request_select('url, short_url, times_opened, custom_short_url', 'Urls', 'user_id', login)
     return json.dumps(response)
 
 
 def add_link(url, url_type, login, custom_short_url = None):
+    ''' adds link in database'''
     if url_type not in link_types:
-        # шо за хуйню ты тут прислал? у нас три типа всего: 'public', 'general', 'private'
         url_type = 'public'
     try:
         last_id = db.request_insert_three('Urls', 'url, url_type, user_id', url, url_type, login)
@@ -190,6 +191,3 @@ def lk():
             return Response('{"status": "error", "error": "Bad request"}', status=400, mimetype='application/json')
     return response
 
-
-if __name__ == '__main__':
-    app.run()

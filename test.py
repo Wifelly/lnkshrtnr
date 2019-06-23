@@ -14,11 +14,9 @@ def token():
     access_token = create_access_token(identity=login)
     return jsonify(access_token=access_token), 200
 @app.route('/tk', methods=['GET'])
-@jwt_required
 def protected():
     # Access the identity of the current user with get_jwt_identity
     current_user = get_jwt_identity()
-    print(current_user)
     return jsonify(logged_in_as=current_user), 200
 
 if __name__ == '__main__':
