@@ -41,7 +41,7 @@ def add_link(url, url_type, login, custom_short_url = None):
     if url_type not in link_types:
         url_type = 'public'
     if url[:4] != 'http':
-        url = 'http//' + url
+        url = 'http://' + url
     if not validate_url(url):
         return jsonify({"msg": "Bad url"}), 400
     try:
