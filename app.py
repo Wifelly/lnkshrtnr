@@ -32,10 +32,10 @@ def validate_user(login, password):
 
 def validate_access(login, cell, value):
     owner = db.request_select('user_id', 'Urls', cell, value)
-    if owner == login:
-        return True
-    else:
+    if owner != login:
         return False
+    else:
+        return True
 
 
 def get_lk(login):
@@ -65,8 +65,7 @@ def add_link(url, url_type, login, custom_short_url = None):
 
 
 def set_custom_short_url(custom_short_url, short_url, login):
-    owner = db.request_select('user_id', 'Urls', 'short_url', short_url)
-    if owner != login:
+    if validate_access(login, 'short_url', short_url):
         return jsonify({"msg": "Acces denied"}), 400
     try:
         db.request_update('Urls', 'custom_short_url', custom_short_url, 'short_url', short_url)
@@ -76,8 +75,7 @@ def set_custom_short_url(custom_short_url, short_url, login):
 
 
 def change_url_type(short_url, url_type, login):
-    owner = db.request_select('user_id', 'Urls', 'short_url', short_url)
-    if owner != login:
+    if validate_access(login, 'short_url', short_url):
         return jsonify({"msg": "Acces denied"}), 400
     if url_type not in url_types:
         return Response('{"status": "error"}', status=400, mimetype='application/json')
@@ -86,16 +84,14 @@ def change_url_type(short_url, url_type, login):
 
 
 def delete_url(short_url, login):
-    owner = db.request_select('user_id', 'Urls', 'short_url', short_url)
-    if owner != login:
+    if validate_access(login, 'short_url', short_url):
         return jsonify({"msg": "Acces denied"}), 400
     db.request_delete('Urls', 'short_url', short_url)
     return Response('{"status": "OK"}', status=200, mimetype='application/json')
 
 
 def delete_custom_short_url(custom_short_url, login):
-    owner = db.request_select('user_id', 'Urls', 'custom_short_url', custom_short_url)
-    if owner != login:
+    if validate_access(login, 'custom_short_url', custom_short_url):
         return jsonify({"msg": "Acces denied"}), 400
     db.request_update('Urls', 'custom_short_url', 'NULL', 'custom_short_url', custom_short_url)
     return Response('{"status": "OK"}', status=200, mimetype='application/json')
