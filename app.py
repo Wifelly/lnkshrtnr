@@ -30,6 +30,14 @@ def validate_user(login, password):
         return False
 
 
+def validate_access(login, cell, value):
+    owner = db.request_select('user_id', 'Urls', cell, value)
+    if owner == login:
+        return True
+    else:
+        return False
+
+
 def get_lk(login):
     '''return url list of user'''
     response = db.request_select('url, short_url, times_opened, custom_short_url', 'Urls', 'user_id', login)
