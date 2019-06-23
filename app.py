@@ -16,9 +16,9 @@ app.config['JWT_SECRET_KEY'] = 'super-secret'
 db = request_db('db.db')
 link_types = ('public', 'general', 'private')
 jwt = JWTManager(app)
-auth = HTTPBasicAuth()
+auth_basic = HTTPBasicAuth()
 
-@auth.verify_password
+@auth_basic.verify_password
 def validate_user(login, password):
     hash_pass = db.request_select('password', 'Users', 'login', login)
     if hash_pass != []:
@@ -92,7 +92,7 @@ def delete_custom_short_url(data):
 
 
 @app.route('/api/auth', methods=['POST'])
-def auth():
+def authorise():
     if not request.is_json:
         return jsonify({"msg": "Missing JSON in request"}), 400
     data = request.json
@@ -147,14 +147,14 @@ def get_link(short_url):
 
 
 @app.route('/general/<string:short_url>', methods=['GET'])
-@auth.login_required
-def general():
+@auth_basic.login_required
+def general(short_url):
     return "Hello"
 
 
 @app.route('/private/<string:short_url>', methods=['GET'])
-@auth.login_required
-def private():
+@auth_basic.login_required
+def private(short_url):
     return "Hello"
 
 
