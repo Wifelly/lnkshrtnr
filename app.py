@@ -164,7 +164,10 @@ def general(short_url):
 
 
 @app.route('/api/lk', methods=['GET', 'POST', 'PATCH', 'DELETE'])
+@jwt_required
 def lk():
+    current_user = get_jwt_identity()
+    
     if request.method == 'GET':
         # получение всех ссылок юзера
         response = get_lk(request.json)
@@ -191,5 +194,6 @@ def lk():
         return response
 if __name__ == '__main__':
     app.run()
+
 
 
