@@ -1,0 +1,5 @@
+Flask
+passlib
+jsonify
+json
+sqlite3
