@@ -66,6 +66,13 @@ def set_custom_short_url(data):
     return Response('{"status": "OK"}', status=200, mimetype='application/json')
 
 
+def change_url_type(data):
+    short_url = data['short_url']
+    url_type = data['url_type']
+    db.request_update('Urls', 'url_type', url_type, 'short_url', short_url)
+    return Response('{"status": "OK"}', status=200, mimetype='application/json')
+
+
 def delete_url(data):
     short_url = data['short_url']
     db.request_delete('Urls', 'short_url', short_url)
