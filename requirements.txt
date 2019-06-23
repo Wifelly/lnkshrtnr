@@ -1,6 +1,5 @@
 Flask
 passlib
-jsonify
 json
 sqlite3
 Flask-BasicAuth
