@@ -56,7 +56,10 @@ def add_link(url, url_type, login, custom_short_url = None):
     return Response('{"short_url": "'+ str(hashed) + '", "custom_short_urs": "' + str(custom_short_url) + '"}', status=200, mimetype='application/json')
 
 
-def set_custom_short_url(custom_short_url, short_url):
+def set_custom_short_url(custom_short_url, short_url, login):
+    owner = db.request_select('user_id', 'Urls', 'short_url', short_url)
+    if owner != login:
+        return jsonify({"msg": "Acces denied"}), 400
     try:
         db.request_update('Urls', 'custom_short_url', custom_short_url, 'short_url', short_url)
     except sqlite3.IntegrityError:
@@ -64,19 +67,28 @@ def set_custom_short_url(custom_short_url, short_url):
     return Response('{"status": "OK"}', status=200, mimetype='application/json')
 
 
-def change_url_type(short_url, url_type):
+def change_url_type(short_url, url_type, login):
+    owner = db.request_select('user_id', 'Urls', 'short_url', short_url)
+    if owner != login:
+        return jsonify({"msg": "Acces denied"}), 400
     if url_type not in url_types:
         return Response('{"status": "error"}', status=400, mimetype='application/json')
     db.request_update('Urls', 'url_type', url_type, 'short_url', short_url)
     return Response('{"status": "OK"}', status=200, mimetype='application/json')
 
 
-def delete_url(short_url):
+def delete_url(short_url, login):
+    owner = db.request_select('user_id', 'Urls', 'short_url', short_url)
+    if owner != login:
+        return jsonify({"msg": "Acces denied"}), 400
     db.request_delete('Urls', 'short_url', short_url)
     return Response('{"status": "OK"}', status=200, mimetype='application/json')
 
 
-def delete_custom_short_url(custom_short_url):
+def delete_custom_short_url(custom_short_url, login):
+    owner = db.request_select('user_id', 'Urls', 'custom_short_url', custom_short_url)
+    if owner != login:
+        return jsonify({"msg": "Acces denied"}), 400
     db.request_update('Urls', 'custom_short_url', 'NULL', 'custom_short_url', custom_short_url)
     return Response('{"status": "OK"}', status=200, mimetype='application/json')
 
@@ -165,18 +177,18 @@ def lk():
         if 'custom_short_url' in data: # изменение ссылки
             custom_short_url = data['custom_short_url']
             short_url = data['short_url']
-            response = set_custom_short_url(custom_short_url, short_url)
+            response = set_custom_short_url(custom_short_url, short_url, login)
         elif ('short_url' in data) and ('url_type' in data): # изменение типа ссылки
             url_type = data['url_type']
             short_url = data['short_url']
-            response = change_url_type(short_url, url_type)
+            response = change_url_type(short_url, url_type, login)
     elif request.method == 'DELETE':
         if 'short_url' in data: # удаление ссылки
             short_url = data['short_url']
-            response = delete_url(short_url)
+            response = delete_url(short_url, login)
         elif 'custom_short_url' in data: # удаление кастом ссылки
             custom_short_url = data['custom_short_url']
-            response = delete_custom_short_url(custom_short_url)
+            response = delete_custom_short_url(custom_short_url, login)
         else:
             return Response('{"status": "error", "error": "Bad request"}', status=400, mimetype='application/json')
     return response
