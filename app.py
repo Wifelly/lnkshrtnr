@@ -41,7 +41,7 @@ def add_link(data):
         # шо за хуйню ты тут прислал? у нас три типа всего: 'public', 'general', 'private'
         url_type = 'public'
     try:
-        last_id = db.request_insert_three('Urls', 'url, type, user_id', url, type, login)
+        last_id = db.request_insert_three('Urls', 'url, url_type, user_id', url, url_type, login)
         hashed = getHash(last_id[0][0])
         db.request_update('Urls', 'short_url', hashed, 'id', last_id[0][0])
     except Exception as e:
