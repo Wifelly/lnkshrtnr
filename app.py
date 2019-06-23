@@ -51,7 +51,7 @@ def add_link(url, url_type, login, custom_short_url = None):
     #     shorten_link = db.request_select('short_url', 'Urls', 'url', data['url'])
     #     hashed = shorten_link[0][0]
     # Переделать под возврат кор. ссылки в джcоне jsonify
-    return Response('{"short_url": "'+ str(hashed) + '"}', status=200, mimetype='application/json')
+    return Response('{"short_url": "'+ str(hashed) + '", "custom_short_urs": "' + str(custom_short_url) + '"}', status=200, mimetype='application/json')
 
 
 def set_custom_short_url(custom_short_url, short_url):
