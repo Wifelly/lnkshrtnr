@@ -1,16 +1,17 @@
 from flask import Flask, request, Response, redirect, jsonify
+from flask_httpauth import HTTPBasicAuth
 from passlib.hash import pbkdf2_sha256
-from hash import getHash
 from db_wrapper import request_db
-import os
-import json
 import sqlite3
+import os
+from lk_function import (
+    get_lk, add_link, set_custom_short_url, change_url_type,
+    delete_url, delete_custom_short_url
+)
 from flask_jwt_extended import (
     JWTManager, jwt_required, create_access_token,
     get_jwt_identity
 )
-from flask_httpauth import HTTPBasicAuth
-from validators import url as validate_url
 
 app = Flask(__name__)
 app.config['JWT_SECRET_KEY'] = '2bb80d537b1da3e38bd30361aa855686bde0eacd7162fef6a25fe97bf527a25b'
@@ -28,73 +29,6 @@ def validate_user(login, password):
         return pbkdf2_sha256.verify(password, hash_pass[0][0])
     else:
         return False
-
-
-def validate_access(login, cell, value):
-    owner = db.request_select('user_id', 'Urls', cell, value)
-    if owner != login:
-        return False
-    else:
-        return True
-
-
-def get_lk(login):
-    '''return url list of user'''
-    response = db.request_select('url, short_url, times_opened, custom_short_url', 'Urls', 'user_id', login)
-    return json.dumps(response)
-
-
-def add_link(url, url_type, login, custom_short_url = None):
-    ''' adds link in database'''
-    if url_type not in url_types:
-        url_type = 'public'
-    if url[:4] != 'http':
-        url = 'http://' + url
-    if not validate_url(url):
-        return jsonify({"msg": "Bad url"}), 400
-    try:
-        last_id = db.request_insert_three('Urls', 'url, url_type, user_id', url, url_type, login)
-        hashed = getHash(last_id[0][0])
-        db.request_update('Urls', 'short_url', hashed, 'id', last_id[0][0])
-        if custom_short_url is not None:
-            db.request_update('Urls', 'custom_short_url', custom_short_url, 'id', last_id[0][0])
-    except sqlite3.IntegrityError:
-        custom_short_url = None
-    # Переделать под возврат кор. ссылки в джcоне jsonify
-    return Response('{"short_url": "'+ str(hashed) + '", "custom_short_urs": "' + str(custom_short_url) + '"}', status=200, mimetype='application/json')
-
-
-def set_custom_short_url(custom_short_url, short_url, login):
-    if validate_access(login, 'short_url', short_url):
-        return jsonify({"msg": "Acces denied"}), 400
-    try:
-        db.request_update('Urls', 'custom_short_url', custom_short_url, 'short_url', short_url)
-    except sqlite3.IntegrityError:
-        return Response('{"status": "error"}', status=400, mimetype='application/json')
-    return Response('{"status": "OK"}', status=200, mimetype='application/json')
-
-
-def change_url_type(short_url, url_type, login):
-    if validate_access(login, 'short_url', short_url):
-        return jsonify({"msg": "Acces denied"}), 400
-    if url_type not in url_types:
-        return Response('{"status": "error"}', status=400, mimetype='application/json')
-    db.request_update('Urls', 'url_type', url_type, 'short_url', short_url)
-    return Response('{"status": "OK"}', status=200, mimetype='application/json')
-
-
-def delete_url(short_url, login):
-    if validate_access(login, 'short_url', short_url):
-        return jsonify({"msg": "Acces denied"}), 400
-    db.request_delete('Urls', 'short_url', short_url)
-    return Response('{"status": "OK"}', status=200, mimetype='application/json')
-
-
-def delete_custom_short_url(custom_short_url, login):
-    if validate_access(login, 'custom_short_url', custom_short_url):
-        return jsonify({"msg": "Acces denied"}), 400
-    db.request_update('Urls', 'custom_short_url', 'NULL', 'custom_short_url', custom_short_url)
-    return Response('{"status": "OK"}', status=200, mimetype='application/json')
 
 
 @app.route('/api/auth', methods=['POST'])
@@ -136,7 +70,6 @@ def get_link(short_url):
         return Response('{"status": "error", "error": "Bad request"}', status=400, mimetype='application/json')
 
 
-
 @app.route('/secure/<string:short_url>', methods=['GET'])
 @auth_basic.login_required
 def general(short_url):
@@ -153,7 +86,6 @@ def general(short_url):
         times_opened = reqv[0][2] + 1
         db.request_update('Urls', 'times_opened', times_opened, 'short_url', short_url)
         return redirect(reqv[0][0], code=302)
-
 
 
 @app.route('/api/lk', methods=['GET', 'POST', 'PATCH', 'DELETE'])
@@ -178,22 +110,21 @@ def lk():
             custom_short_url = data['custom_short_url']
             response = add_link(url, url_type, login, custom_short_url)
     elif request.method == 'PATCH':
-        if 'custom_short_url' in data: # изменение ссылки
+        if 'custom_short_url' in data:  # изменение ссылки
             custom_short_url = data['custom_short_url']
             short_url = data['short_url']
             response = set_custom_short_url(custom_short_url, short_url, login)
-        elif ('short_url' in data) and ('url_type' in data): # изменение типа ссылки
+        elif ('short_url' in data) and ('url_type' in data):  # изменение типа ссылки
             url_type = data['url_type']
             short_url = data['short_url']
             response = change_url_type(short_url, url_type, login)
     elif request.method == 'DELETE':
-        if 'short_url' in data: # удаление ссылки
+        if 'short_url' in data:  # удаление ссылки
             short_url = data['short_url']
             response = delete_url(short_url, login)
-        elif 'custom_short_url' in data: # удаление кастом ссылки
+        elif 'custom_short_url' in data:  # удаление кастом ссылки
             custom_short_url = data['custom_short_url']
             response = delete_custom_short_url(custom_short_url, login)
         else:
             return Response('{"status": "error", "error": "Bad request"}', status=400, mimetype='application/json')
     return response
-

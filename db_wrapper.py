@@ -33,40 +33,7 @@ class request_db(database):
             SELECT {output_fields}
             FROM {table}
             '''
-        return super().read_(select_request) 
-
-    def request_select_join(self,
-                            output_fields,
-                            from_table,
-                            join_table,
-                            condition_field=None,
-                            condition=None,
-                            ):
-        """
-        :param output_fields: Поля вывода [таблица.поле]
-        :param from_table: Таблица запроса
-        :param join_table: Таблица подключения
-        :param condition_field: Поле условия [таблица.поле]
-        :param condition: Условие выборки
-        """
-        if condition:
-            request_select = f'''
-            SELECT {output_fields}
-            FROM {from_table}
-            INNER JOIN {join_table} on 
-            {from_table}.login = {join_table}.user_id
-            INNER JOIN Users on {join_table}.user_id = {from_table}.login
-            WHERE {condition_field} = '{condition}'
-            '''
-        else:
-            request_select = f'''
-            SELECT {output_fields}
-            FROM {from_table}
-            INNER JOIN {join_table} on 
-            {from_table}.login = {join_table}.user_id
-            INNER JOIN Users on {join_table}.Users = {from_table}.id
-            '''
-        return super().read_(request_select)
+        return super().read_(select_request)
 
     def request_insert(self, table, fields, *values):
         insert_request = f'''

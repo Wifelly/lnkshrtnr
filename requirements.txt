@@ -1,6 +1,2 @@
-Flask
-passlib
-json
-sqlite3
-Flask-BasicAuth
-flask-jwt-extended
+Flask-HTTPAuth==3.3.0
+Flask==1.0.3
