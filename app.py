@@ -86,32 +86,19 @@ def authorise():
         return jsonify({"msg": "Missing login parameter"}), 400
     if 'password' not in data:
         return jsonify({"msg": "Missing password parameter"}), 400
-    
     login = data['login']
     password = data['password']
-    
-    
     try:
         hash = pbkdf2_sha256.hash(password)
-        # помещаем лог и пароль в бд
         db.request_insert_two('Users', 'login, password', login, hash)
     except sqlite3.IntegrityError:
-        print("ujdkfjdlfjd")
-        # если лог уже в бд - значит юзер уже зареган 
-        # чекаем пароль на валидность и даем токен
-        
-
         if not validate_user(login, password):
             return jsonify({"msg": "Bad login or password"}), 401
-
-        # Identity can be any data that is json serializable
     access_token = create_access_token(identity=login)
     return jsonify(access_token=access_token), 200
-    # ну и наверн возвращаем токен
-    # Знать бы как его генерить бы ещё
 
 
-@app.route('/short/<string:short_url>', methods=['GET'])
+@app.route('/<string:short_url>', methods=['GET'])
 def get_link(short_url):
     reqv = db.request_select('url, url_type, times_opened, user_id', 'Urls', 'short_url', short_url)
     print(reqv)
