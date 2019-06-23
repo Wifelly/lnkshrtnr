@@ -3,3 +3,5 @@ passlib
 jsonify
 json
 sqlite3
+Flask-BasicAuth
+flask-jwt-extended
