@@ -7,7 +7,6 @@ import os
 import json
 import sqlite3
 
-
 app = Flask(__name__)
 db = request_db('db.db')
 link_types = ('public', 'general', 'private')
