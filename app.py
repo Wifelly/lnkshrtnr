@@ -35,7 +35,7 @@ def add_link(data):
     if ('url' not in data) or ('url_type' not in data) or ('login' not in data):
         return Response('{"status": "error", "error": "Bad request"}', status=400, mimetype='application/json')
     url = data['url']
-    type = data['url_type']
+    url_type = data['url_type']
     login = data['login']
     if data['url_type'] not in link_types:
         # шо за хуйню ты тут прислал? у нас три типа всего: 'public', 'general', 'private'
