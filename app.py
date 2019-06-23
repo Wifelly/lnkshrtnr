@@ -34,13 +34,15 @@ def get_lk(login):
     return json.dumps(response)
 
 
-def add_link(url, url_type, login):
+def add_link(url, url_type, login, custom_short_url = None):
     if url_type not in link_types:
         # шо за хуйню ты тут прислал? у нас три типа всего: 'public', 'general', 'private'
         url_type = 'public'
     try:
         last_id = db.request_insert_three('Urls', 'url, url_type, user_id', url, url_type, login)
         hashed = getHash(last_id[0][0])
+        if custom_short_url is not None:
+            db.request_update('Urls', 'custom_short_url', custom_short_url, 'id', last_id[0][0])
         db.request_update('Urls', 'short_url', hashed, 'id', last_id[0][0])
     except Exception as e:
         print(e)
@@ -151,31 +153,32 @@ def general(short_url):
 @jwt_required
 def lk():
     login = get_jwt_identity()
-    if not request.is_json:
-        return jsonify({"msg": "Missing JSON in request"}), 400
+    # if not request.is_json:
+    #     return jsonify({"msg": "Missing JSON in request"}), 400
     data = request.json
     if request.method == 'GET':
         # получение всех ссылок юзера
         response = get_lk(login)
-        return response
     elif request.method == 'POST':
         # добавление ссылки
         if 'url' not in data or 'url_type' not in data:
             return Response('{"status": "error", "error": "Bad request"}', status=400, mimetype='application/json')
         url = data['url']
         url_type = data['url_type']
-        response = add_link(url, url_type, login)
-        return response
+        if 'custom_short_url' not in data:
+            response = add_link(url, url_type, login)
+        else:
+            custom_short_url = data['custom_short_url']
+            response = add_link(url, url_type, login, custom_short_url)
     elif request.method == 'PATCH':
         if 'custom_short_url' in data: # изменение ссылки
             custom_short_url = data['custom_short_url']
             short_url = data['short_url']
             response = set_custom_short_url(custom_short_url, short_url)
-        elif ('short_url' in data) and ('url_type' in data):
+        elif ('short_url' in data) and ('url_type' in data): # изменение типа ссылки
             url_type = data['url_type']
             short_url = data['short_url']
             response = change_url_type(short_url, url_type)
-        return response
     elif request.method == 'DELETE':
         if 'short_url' in data: # удаление ссылки
             short_url = data['short_url']
@@ -185,7 +188,7 @@ def lk():
             response = delete_custom_short_url(custom_short_url)
         else:
             return Response('{"status": "error", "error": "Bad request"}', status=400, mimetype='application/json')
-        return response
+    return response
 
 
 if __name__ == '__main__':
