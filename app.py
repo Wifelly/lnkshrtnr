@@ -15,7 +15,7 @@ from validators import url as validate_url
 app = Flask(__name__)
 app.config['JWT_SECRET_KEY'] = '2bb80d537b1da3e38bd30361aa855686bde0eacd7162fef6a25fe97bf527a25b'
 db = request_db('db.db')
-link_types = ('public', 'general', 'private')
+url_types = ('public', 'general', 'private')
 jwt = JWTManager(app)
 auth_basic = HTTPBasicAuth()
 
@@ -38,7 +38,7 @@ def get_lk(login):
 
 def add_link(url, url_type, login, custom_short_url = None):
     ''' adds link in database'''
-    if url_type not in link_types:
+    if url_type not in url_types:
         url_type = 'public'
     if url[:4] != 'http':
         url = 'http://' + url
@@ -47,15 +47,11 @@ def add_link(url, url_type, login, custom_short_url = None):
     try:
         last_id = db.request_insert_three('Urls', 'url, url_type, user_id', url, url_type, login)
         hashed = getHash(last_id[0][0])
+        db.request_update('Urls', 'short_url', hashed, 'id', last_id[0][0])
         if custom_short_url is not None:
             db.request_update('Urls', 'custom_short_url', custom_short_url, 'id', last_id[0][0])
-        db.request_update('Urls', 'short_url', hashed, 'id', last_id[0][0])
-    except Exception as e:
-        print(e)
-    # except sqlite3.IntegrityError:
-    #     print('oops')
-    #     shorten_link = db.request_select('short_url', 'Urls', 'url', data['url'])
-    #     hashed = shorten_link[0][0]
+    except sqlite3.IntegrityError:
+        custom_short_url = None
     # Переделать под возврат кор. ссылки в джcоне jsonify
     return Response('{"short_url": "'+ str(hashed) + '", "custom_short_urs": "' + str(custom_short_url) + '"}', status=200, mimetype='application/json')
 
@@ -63,12 +59,14 @@ def add_link(url, url_type, login, custom_short_url = None):
 def set_custom_short_url(custom_short_url, short_url):
     try:
         db.request_update('Urls', 'custom_short_url', custom_short_url, 'short_url', short_url)
-    except Exception as e:
-        print(e)
+    except sqlite3.IntegrityError:
+        return Response('{"status": "error"}', status=400, mimetype='application/json')
     return Response('{"status": "OK"}', status=200, mimetype='application/json')
 
 
 def change_url_type(short_url, url_type):
+    if url_type not in url_types:
+        return Response('{"status": "error"}', status=400, mimetype='application/json')
     db.request_update('Urls', 'url_type', url_type, 'short_url', short_url)
     return Response('{"status": "OK"}', status=200, mimetype='application/json')
 
