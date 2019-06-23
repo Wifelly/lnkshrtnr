@@ -18,6 +18,7 @@ link_types = ('public', 'general', 'private')
 jwt = JWTManager(app)
 auth_basic = HTTPBasicAuth()
 
+
 @auth_basic.verify_password
 def validate_user(login, password):
     hash_pass = db.request_select('password', 'Users', 'login', login)
@@ -27,23 +28,14 @@ def validate_user(login, password):
         return False
 
 
-def get_lk(data):
-    if 'login' not in data:
-        return Response('{"status": "error", "error": "Bad request"}', status=400, mimetype='application/json')
-    login = data['login']
-    # Делаем запрос в бд левым джоином на все линки, созданные username
-    response = db.request_select('url, short_url, times_opened', 'Urls', 'user_id', login)
-    print(json.dumps(response))
+def get_lk(login):
+    '''принимает логин, возвращает список '''
+    response = db.request_select('url, short_url, times_opened, custom_short_url', 'Urls', 'user_id', login)
     return json.dumps(response)
 
 
-def add_link(data):
-    if ('url' not in data) or ('url_type' not in data) or ('login' not in data):
-        return Response('{"status": "error", "error": "Bad request"}', status=400, mimetype='application/json')
-    url = data['url']
-    url_type = data['url_type']
-    login = data['login']
-    if data['url_type'] not in link_types:
+def add_link(url, url_type, login):
+    if url_type not in link_types:
         # шо за хуйню ты тут прислал? у нас три типа всего: 'public', 'general', 'private'
         url_type = 'public'
     try:
@@ -60,11 +52,7 @@ def add_link(data):
     return Response('{"short_url": "'+ str(hashed) + '"}', status=200, mimetype='application/json')
 
 
-def set_custom_short_url(data):
-    if 'custom_short_url' not in data or 'short_url' not in data:
-        return Response('{"status": "error", "error": "Bad request"}', status=400, mimetype='application/json')
-    custom_short_url = data['custom_short_url']
-    short_url = data['short_url']
+def set_custom_short_url(custom_short_url, short_url):
     try:
         db.request_update('Urls', 'custom_short_url', custom_short_url, 'short_url', short_url)
     except Exception as e:
@@ -72,21 +60,17 @@ def set_custom_short_url(data):
     return Response('{"status": "OK"}', status=200, mimetype='application/json')
 
 
-def change_url_type(data):
-    short_url = data['short_url']
-    url_type = data['url_type']
+def change_url_type(short_url, url_type):
     db.request_update('Urls', 'url_type', url_type, 'short_url', short_url)
     return Response('{"status": "OK"}', status=200, mimetype='application/json')
 
 
-def delete_url(data):
-    short_url = data['short_url']
+def delete_url(short_url):
     db.request_delete('Urls', 'short_url', short_url)
     return Response('{"status": "OK"}', status=200, mimetype='application/json')
 
 
-def delete_custom_short_url(data):
-    custom_short_url = data['custom_short_url']
+def delete_custom_short_url(custom_short_url):
     db.request_update('Urls', 'custom_short_url', 'NULL', 'custom_short_url', custom_short_url)
     return Response('{"status": "OK"}', status=200, mimetype='application/json')
 
@@ -166,34 +150,43 @@ def general(short_url):
 @app.route('/api/lk', methods=['GET', 'POST', 'PATCH', 'DELETE'])
 @jwt_required
 def lk():
-    current_user = get_jwt_identity()
-    
+    login = get_jwt_identity()
+    if not request.is_json:
+        return jsonify({"msg": "Missing JSON in request"}), 400
+    data = request.json
     if request.method == 'GET':
         # получение всех ссылок юзера
-        response = get_lk(request.json)
+        response = get_lk(login)
         return response
     elif request.method == 'POST':
         # добавление ссылки
-        response = add_link(request.json)
+        if 'url' not in data or 'url_type' not in data:
+            return Response('{"status": "error", "error": "Bad request"}', status=400, mimetype='application/json')
+        url = data['url']
+        url_type = data['url_type']
+        response = add_link(url, url_type, login)
         return response
     elif request.method == 'PATCH':
-        data = request.json
         if 'custom_short_url' in data: # изменение ссылки
-            response = set_custom_short_url(data)
+            custom_short_url = data['custom_short_url']
+            short_url = data['short_url']
+            response = set_custom_short_url(custom_short_url, short_url)
         elif ('short_url' in data) and ('url_type' in data):
-            response = change_url_type(data)
+            url_type = data['url_type']
+            short_url = data['short_url']
+            response = change_url_type(short_url, url_type)
         return response
     elif request.method == 'DELETE':
-        data = request.json
-        if 'url' in data: # удаление ссылки
-            response = delete_url(data)
+        if 'short_url' in data: # удаление ссылки
+            short_url = data['short_url']
+            response = delete_url(short_url)
         elif 'custom_short_url' in data: # удаление кастом ссылки
-            response = delete_custom_short_url(data)
+            custom_short_url = data['custom_short_url']
+            response = delete_custom_short_url(custom_short_url)
         else:
             return Response('{"status": "error", "error": "Bad request"}', status=400, mimetype='application/json')
         return response
+
+
 if __name__ == '__main__':
     app.run()
-
-
-
