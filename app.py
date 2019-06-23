@@ -136,9 +136,7 @@ def get_link(short_url):
         times_opened = reqv[0][2] + 1
         db.request_update('Urls', 'times_opened', times_opened, 'short_url', short_url)
         return redirect(reqv[0][0], code=302)
-    elif reqv[0][1] == 'general':
-        return redirect('/secure/' + short_url, code=302)
-    elif reqv[0][1] == 'private':
+    elif (reqv[0][1] == 'general') or (reqv[0][1] == 'private'):
         return redirect('/secure/' + short_url, code=302)
     else:
         # сумасшедший? что это вообще за ссылка?
@@ -149,8 +147,19 @@ def get_link(short_url):
 @app.route('/secure/<string:short_url>', methods=['GET'])
 @auth_basic.login_required
 def general(short_url):
-    return "Hello"
-
+    reqv = db.request_select('url, url_type, times_opened, user_id', 'Urls', 'short_url', short_url)
+    print(reqv)
+    if reqv == []:
+        reqv = db.request_select('url, url_type, times_opened, short_url, user_id', 'Urls', 'custom_short_url', short_url)
+        short_url = reqv[0][3]
+    if (reqv[0][1] == 'general'):
+        times_opened = reqv[0][2] + 1
+        db.request_update('Urls', 'times_opened', times_opened, 'short_url', short_url)
+        return redirect(reqv[0][0], code=302)
+    elif (reqv[0][1] == 'private') and (auth_basic.username == reqv[0][4]):
+        times_opened = reqv[0][2] + 1
+        db.request_update('Urls', 'times_opened', times_opened, 'short_url', short_url)
+        return redirect(reqv[0][0], code=302)
 
 
 
