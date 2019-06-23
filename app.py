@@ -97,12 +97,13 @@ def auth():
     if not request.is_json:
         return jsonify({"msg": "Missing JSON in request"}), 400
     data = request.json
+    if 'login' not in data:
+        return jsonify({"msg": "Missing login parameter"}), 400
+    if 'password' not in data:
+        return jsonify({"msg": "Missing password parameter"}), 400
+    
     login = data['login']
     password = data['password']
-    if not login:
-        return jsonify({"msg": "Missing login parameter"}), 400
-    if not password:
-        return jsonify({"msg": "Missing password parameter"}), 400
     
     
     try:
@@ -119,7 +120,7 @@ def auth():
 
         # Identity can be any data that is json serializable
     access_token = create_access_token(identity=login)
-    return Response('{"access_token:": "'+ str(access_token) + '"}', status=200, mimetype='application/json')
+    return jsonify(access_token=access_token), 200
     # ну и наверн возвращаем токен
     # Знать бы как его генерить бы ещё
 
