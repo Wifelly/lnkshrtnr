@@ -11,17 +11,18 @@ from flask_jwt_extended import (
 )
 from flask_basicauth import BasicAuth
 
+
 app = Flask(__name__)
-basic_auth = BasicAuth(app)
 app.config['JWT_SECRET_KEY'] = 'super-secret'
 db = request_db('db.db')
 link_types = ('public', 'general', 'private')
 jwt = JWTManager(app)
-
+basic_auth = BasicAuth(app)
+app.config['BASIC_AUTH_USERNAME'] = 'john'
+app.config['BASIC_AUTH_PASSWORD'] = 'matrix'
 
 def validate_user(login, password):
     hash_pass = db.request_select('password', 'Users', 'login', login)
-    print(hash_pass == [])
     if hash_pass != []:
         return pbkdf2_sha256.verify(password, hash_pass[0][0])
     else:
@@ -111,6 +112,7 @@ def auth():
         # помещаем лог и пароль в бд
         db.request_insert_two('Users', 'login, password', login, hash)
     except sqlite3.IntegrityError:
+        print("ujdkfjdlfjd")
         # если лог уже в бд - значит юзер уже зареган 
         # чекаем пароль на валидность и даем токен
         
@@ -126,7 +128,8 @@ def auth():
 
 
 @app.route('/<string:short_url>', methods=['GET'])
-def get_link(short_url):
+def get_link(sh2019-06-23 22:04:52,414] ERROR in app: Exception on /favicon.ico [GET]
+ort_url):
     reqv = db.request_select('url, url_type, times_opened, user_id', 'Urls', 'short_url', short_url)
     print(reqv)
     if reqv == []:
@@ -143,6 +146,24 @@ def get_link(short_url):
     else:
         # сумасшедший? что это вообще за ссылка?
         return Response('{"status": "error", "error": "Bad request"}', status=400, mimetype='application/json')
+
+
+@app.route('/general/<string:short_url>', methods=['GET'])
+@basic_auth.required
+def general(short_url):
+    auth = request.authorization
+
+    if auth or validate_user(auth.username, auth.password):
+        return "Hello"
+@app.route('/private/<string:short_url>', methods=['GET'])
+
+
+@basic_auth.required
+def private(short_url):
+    auth = request.authorization
+    check_credentials(auth.username, auth.password)
+    if auth or validate_user(auth.username, auth.password):
+        return "Hello"
 
 
 @app.route('/api/lk', methods=['GET', 'POST', 'PATCH', 'DELETE'])
@@ -171,3 +192,5 @@ def lk():
         else:
             return Response('{"status": "error", "error": "Bad request"}', status=400, mimetype='application/json')
         return response
+
+
