@@ -124,7 +124,7 @@ def auth():
     # ну и наверн возвращаем токен
     # Знать бы как его генерить бы ещё
 
-#test
+
 @app.route('/<string:short_url>', methods=['GET'])
 def get_link(short_url):
     reqv = db.request_select('url, url_type, times_opened, user_id', 'Urls', 'short_url', short_url)
@@ -137,17 +137,9 @@ def get_link(short_url):
         db.request_update('Urls', 'times_opened', times_opened, 'short_url', short_url)
         return redirect(reqv[0][0], code=302)
     elif reqv[0][1] == 'general':
-        # просим логин
-
-        times_opened = reqv[0][2] + 1
-        db.request_update('Urls', 'times_opened', times_opened, 'short_url', short_url)
-        return redirect(reqv[0][0], code=302)
+        return redirect('/general/' + short_url, code=302)
     elif reqv[0][1] == 'private':
-        # просим логин и если логин != создателю - шлем нахуй
-
-        times_opened = reqv[0][2] + 1
-        db.request_update('Urls', 'times_opened', times_opened, 'short_url', short_url)
-        return redirect(reqv[0][0], code=302)
+        return redirect('/private/' + short_url, code=302)
     else:
         # сумасшедший? что это вообще за ссылка?
         return Response('{"status": "error", "error": "Bad request"}', status=400, mimetype='application/json')
