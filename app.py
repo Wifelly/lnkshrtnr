@@ -39,6 +39,8 @@ def add_link(url, url_type, login, custom_short_url = None):
     ''' adds link in database'''
     if url_type not in link_types:
         url_type = 'public'
+    if url[:4] != 'http':
+        url = 'https//' + url
     try:
         last_id = db.request_insert_three('Urls', 'url, url_type, user_id', url, url_type, login)
         hashed = getHash(last_id[0][0])
