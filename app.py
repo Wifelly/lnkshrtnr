@@ -10,7 +10,7 @@ from flask_jwt_extended import (
     get_jwt_identity
 )
 from flask_basicauth import BasicAuth
-
+#TEST
 app = Flask(__name__)
 basic_auth = BasicAuth(app)
 app.config['JWT_SECRET_KEY'] = 'super-secret'
