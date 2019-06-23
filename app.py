@@ -2,14 +2,21 @@ from flask import Flask, request, Response, redirect, jsonify
 from passlib.hash import pbkdf2_sha256
 from hash import getHash
 from db_wrapper import request_db
-import jsonify
 import os
 import json
 import sqlite3
+from flask_jwt_extended import (
+    JWTManager, jwt_required, create_access_token,
+    get_jwt_identity
+)
+from flask_basicauth import BasicAuth
 
 app = Flask(__name__)
+basic_auth = BasicAuth(app)
+app.config['JWT_SECRET_KEY'] = 'super-secret'
 db = request_db('db.db')
 link_types = ('public', 'general', 'private')
+jwt = JWTManager(app)
 
 
 def validate_user(login, password):
@@ -87,26 +94,34 @@ def delete_custom_short_url(data):
 
 @app.route('/api/auth', methods=['POST'])
 def auth():
+    if not request.is_json:
+        return jsonify({"msg": "Missing JSON in request"}), 400
     data = request.json
-    if 'login' not in data or 'password' not in data:
-        return Response('{"status": "error", "error": "Bad request"}', status=400, mimetype='application/json')
     login = data['login']
     password = data['password']
+    if not login:
+        return jsonify({"msg": "Missing login parameter"}), 400
+    if not password:
+        return jsonify({"msg": "Missing password parameter"}), 400
+    
+    
     try:
-        print(login)
-        print(password)
         hash = pbkdf2_sha256.hash(password)
-        print(hash)
         # помещаем лог и пароль в бд
         db.request_insert_two('Users', 'login, password', login, hash)
     except sqlite3.IntegrityError:
         # если лог уже в бд - значит юзер уже зареган 
         # чекаем пароль на валидность и даем токен
+        
 
-        return Response('{"status": "OK", "token": "token"}', status=200, mimetype='application/json')
+        if not validate_user(login, password):
+            return jsonify({"msg": "Bad login or password"}), 401
+
+        # Identity can be any data that is json serializable
+    access_token = create_access_token(identity=login)
+    return Response('{"access_token:": "'+ str(access_token) + '"}', status=200, mimetype='application/json')
     # ну и наверн возвращаем токен
     # Знать бы как его генерить бы ещё
-    return Response('{"status": "OK", "token": "token"}', status=200, mimetype='application/json')
 
 
 @app.route('/short/<string:short_url>', methods=['GET'])
