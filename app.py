@@ -32,14 +32,14 @@ def get_lk(data):
 
 
 def add_link(data):
-    if ('url' not in data) or ('type' not in data) or ('login' not in data):
+    if ('url' not in data) or ('url_type' not in data) or ('login' not in data):
         return Response('{"status": "error", "error": "Bad request"}', status=400, mimetype='application/json')
     url = data['url']
-    type = data['type']
+    type = data['url_type']
     login = data['login']
-    if data['type'] not in link_types:
+    if data['url_type'] not in link_types:
         # шо за хуйню ты тут прислал? у нас три типа всего: 'public', 'general', 'private'
-        type = 'public'
+        url_type = 'public'
     try:
         last_id = db.request_insert_three('Urls', 'url, type, user_id', url, type, login)
         hashed = getHash(last_id[0][0])
@@ -104,10 +104,10 @@ def auth():
 
 @app.route('/short/<string:short_url>', methods=['GET'])
 def get_link(short_url):
-    reqv = db.request_select('url, type, times_opened, user_id', 'Urls', 'short_url', short_url)
+    reqv = db.request_select('url, url_type, times_opened, user_id', 'Urls', 'short_url', short_url)
     print(reqv)
     if reqv == []:
-        reqv = db.request_select('url, type, times_opened, short_url, user_id', 'Urls', 'custom_short_url', short_url)
+        reqv = db.request_select('url, url_type, times_opened, short_url, user_id', 'Urls', 'custom_short_url', short_url)
         short_url = reqv[0][3]
     if reqv[0][1] == 'public':
         times_opened = reqv[0][2] + 1
@@ -141,8 +141,11 @@ def lk():
         response = add_link(request.json)
         return response
     elif request.method == 'PATCH':
-        # изменение ссылки
-        response = set_custom_short_url(request.json)
+        data = request.json
+        if 'custom_short_url' in data: # изменение ссылки
+            response = set_custom_short_url(data)
+        elif ('short_url' in data) and ('url_type' in data):
+            response = change_url_type(data)
         return response
     elif request.method == 'DELETE':
         data = request.json

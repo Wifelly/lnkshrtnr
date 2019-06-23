@@ -15,7 +15,7 @@ cursor.execute("""CREATE TABLE IF NOT EXISTS Urls (
                     url TEXT NOT NULL,
                     short_url TEXT UNIQUE,
                     custom_short_url TEXT UNIQUE,
-                    type TEXT NOT NULL,
+                    url_type TEXT NOT NULL,
                     times_opened INTEGER DEFAULT 0 NOT NULL,
                     user_id INTEGER REFERENCES Users(login)
                     );
