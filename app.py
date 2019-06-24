@@ -5,11 +5,17 @@ from db_wrapper import request_db
 import sqlite3
 import os
 from lk_function import (
-    get_lk, add_link, set_custom_short_url, change_url_type,
-    delete_url, delete_custom_short_url
+    get_lk,
+    add_link,
+    set_custom_short_url,
+    change_url_type,
+    delete_url,
+    delete_custom_short_url
 )
 from flask_jwt_extended import (
-    JWTManager, jwt_required, create_access_token,
+    JWTManager,
+    jwt_required,
+    create_access_token,
     get_jwt_identity
 )
 
@@ -57,7 +63,12 @@ def get_link(short_url):
     reqv = db.request_select('url, url_type, times_opened, user_id', 'Urls', 'short_url', short_url)
     print(reqv)
     if reqv == []:
-        reqv = db.request_select('url, url_type, times_opened, short_url, user_id', 'Urls', 'custom_short_url', short_url)
+        reqv = db.request_select(
+            'url, url_type, times_opened, short_url, user_id',
+            'Urls',
+            'custom_short_url',
+            short_url,
+        )
         short_url = reqv[0][3]
     if reqv[0][1] == 'public':
         times_opened = reqv[0][2] + 1
@@ -82,10 +93,11 @@ def general(short_url):
         times_opened = reqv[0][2] + 1
         db.request_update('Urls', 'times_opened', times_opened, 'short_url', short_url)
         return redirect(reqv[0][0], code=302)
-    elif (reqv[0][1] == 'private') and (auth_basic.username == reqv[0][4]):
+    elif (reqv[0][1] == 'private') and (auth_basic.username == reqv[0][3]):
         times_opened = reqv[0][2] + 1
         db.request_update('Urls', 'times_opened', times_opened, 'short_url', short_url)
         return redirect(reqv[0][0], code=302)
+    return jsonify(msg='access denied'), 403
 
 
 @app.route('/api/lk', methods=['GET', 'POST', 'PATCH', 'DELETE'])
@@ -110,11 +122,11 @@ def lk():
             custom_short_url = data['custom_short_url']
             response = add_link(url, url_type, login, custom_short_url)
     elif request.method == 'PATCH':
-        if 'custom_short_url' in data:  # изменение ссылки
+        if 'custom_short_url' in data and 'short_uld' in data:  # изменение ссылки
             custom_short_url = data['custom_short_url']
             short_url = data['short_url']
             response = set_custom_short_url(custom_short_url, short_url, login)
-        elif ('short_url' in data) and ('url_type' in data):  # изменение типа ссылки
+        elif 'short_url' in data and 'url_type' in data:  # изменение типа ссылки
             url_type = data['url_type']
             short_url = data['short_url']
             response = change_url_type(short_url, url_type, login)
@@ -125,6 +137,6 @@ def lk():
         elif 'custom_short_url' in data:  # удаление кастом ссылки
             custom_short_url = data['custom_short_url']
             response = delete_custom_short_url(custom_short_url, login)
-        else:
-            return Response('{"status": "error", "error": "Bad request"}', status=400, mimetype='application/json')
+    else:
+        return Response('{"status": "error", "error": "Bad request"}', status=400, mimetype='application/json')
     return response
