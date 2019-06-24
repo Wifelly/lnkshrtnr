@@ -1,2 +1,5 @@
 Flask-HTTPAuth==3.3.0
 Flask==1.0.3
+validators==0.13.0
+Flask-JWT-Extended==3.18.2
+passlib==1.7.1
