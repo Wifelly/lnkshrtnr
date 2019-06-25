@@ -69,8 +69,8 @@ def get_link(short_url):
             'custom_short_url',
             short_url,
         )
-		if reqv == []:
-		return Response('{"status": "error", "error": "Bad request"}', status=400, mimetype='application/json')
+        if reqv == []:
+            return Response('{"status": "error", "error": "Bad request"}', status=400, mimetype='application/json')
         short_url = reqv[0][3]
     if reqv[0][1] == 'public':
         times_opened = reqv[0][2] + 1
