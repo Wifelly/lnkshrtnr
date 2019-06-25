@@ -72,7 +72,7 @@ def get_link(short_url):
             short_url,
         )
         if reqv == []:
-            return Response('{"status": "error", "error": "Bad request"}', status=400, mimetype='application/json')
+            return jsonify({"msg": "Bad request"}), 400
         short_url = reqv[0][3]
     if reqv[0][1] == 'public':
         times_opened = reqv[0][2] + 1
@@ -82,7 +82,7 @@ def get_link(short_url):
         return redirect('/secure/' + short_url, code=302)
     else:
         # сумасшедший? что это вообще за ссылка?
-        return Response('{"status": "error", "error": "Bad request"}', status=400, mimetype='application/json')
+        return jsonify({"msg": "Bad request"}), 400
 
 
 @app.route('/secure/<string:short_url>', methods=['GET'])
@@ -117,7 +117,7 @@ def lk():
     elif request.method == 'POST':
         # добавление ссылки
         if 'url' not in data or 'url_type' not in data:
-            return Response('{"status": "error", "error": "Bad request"}', status=400, mimetype='application/json')
+            return jsonify({"msg": "Bad request"}), 400
         url = data['url']
         url_type = data['url_type']
         if 'custom_short_url' not in data:
@@ -142,5 +142,5 @@ def lk():
             custom_short_url = data['custom_short_url']
             response = delete_custom_short_url(custom_short_url, login)
     else:
-        return Response('{"status": "error", "error": "Bad request"}', status=400, mimetype='application/json')
+        return jsonify({"msg": "Bad request"}), 400
     return response
