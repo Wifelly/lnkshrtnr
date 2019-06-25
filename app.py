@@ -116,7 +116,7 @@ def lk():
         response = get_lk(login)
     elif request.method == 'POST':
         # добавление ссылки
-        if 'url' not in data or 'url_type' not in data:
+        if ('url' not in data) or ('url_type' not in data):
             return jsonify({"msg": "Bad request"}), 400
         url = data['url']
         url_type = data['url_type']
@@ -126,14 +126,16 @@ def lk():
             custom_short_url = data['custom_short_url']
             response = add_link(url, url_type, login, custom_short_url)
     elif request.method == 'PATCH':
-        if 'custom_short_url' in data and 'short_uld' in data:  # изменение ссылки
+        if ('custom_short_url' in data) and ('short_url' in data):  # изменение ссылки
             custom_short_url = data['custom_short_url']
             short_url = data['short_url']
             response = set_custom_short_url(custom_short_url, short_url, login)
-        elif 'short_url' in data and 'url_type' in data:  # изменение типа ссылки
+        elif ('short_url' in data) and ('url_type' in data):  # изменение типа ссылки
             url_type = data['url_type']
             short_url = data['short_url']
             response = change_url_type(short_url, url_type, login)
+        else:
+            return jsonify({"msg": "Bad request"}), 400
     elif request.method == 'DELETE':
         if 'short_url' in data:  # удаление ссылки
             short_url = data['short_url']
@@ -141,6 +143,8 @@ def lk():
         elif 'custom_short_url' in data:  # удаление кастом ссылки
             custom_short_url = data['custom_short_url']
             response = delete_custom_short_url(custom_short_url, login)
+        else:
+            return jsonify({"msg": "Bad request"}), 400
     else:
         return jsonify({"msg": "Bad request"}), 400
     return response
