@@ -1,9 +1,17 @@
+import sqlite3
+import os
+
 from flask import Flask, request, Response, redirect, jsonify
 from flask_httpauth import HTTPBasicAuth
 from passlib.hash import pbkdf2_sha256
+from flask_jwt_extended import (
+    JWTManager,
+    jwt_required,
+    create_access_token,
+    get_jwt_identity
+)
+
 from db_wrapper import request_db
-import sqlite3
-import os
 from lk_function import (
     get_lk,
     add_link,
@@ -11,12 +19,6 @@ from lk_function import (
     change_url_type,
     delete_url,
     delete_custom_short_url
-)
-from flask_jwt_extended import (
-    JWTManager,
-    jwt_required,
-    create_access_token,
-    get_jwt_identity
 )
 
 app = Flask(__name__)
